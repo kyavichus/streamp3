@@ -184,7 +184,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
             elif b'?' in station:
                 query = station.split(b'?')[1].decode().replace('%20', ' ')
-                query = urllib.parse(query)
+                query = urllib.parse.unquote(query)
                 select = f"SELECT * FROM muzlo WHERE artist like '%{query}%' ORDER BY RANDOM();"
                 cur.execute(select)
                 filtered = cur.fetchmany(100)
