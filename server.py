@@ -178,14 +178,15 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 genre = station.decode().split('genre=')[1]
                 select = f"SELECT * FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();"
                 cur.execute(select)
-                filtered = cur.fetchmany(2)
+                filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
 
             elif b'?' in station:
                 query = station.split(b'?')[1].decode().replace('%20', ' ')
+                print('query', query)
                 select = f"SELECT * FROM muzlo WHERE artist like '%{query}%' ORDER BY RANDOM();"
                 cur.execute(select)
-                filtered = cur.fetchmany(2)
+                filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
 
 
