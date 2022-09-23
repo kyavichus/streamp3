@@ -44,6 +44,7 @@ duration = 30
 
 def get_img_url(artist, album) -> str:
     url = f'https://www.last.fm/ru/music/{artist.replace(" ", "+")}/{album.replace(" ", "+")}'
+    print(url)
 
     resp = requests.get(url).text
 
@@ -73,7 +74,7 @@ def getTinyTags(path):
 
 
 globaltag = ''
-globaltag2 = ''
+stream10list = ''
 albumjpg = b''
 
 
@@ -83,16 +84,17 @@ class RadioHandler(socketserver.StreamRequestHandler):
         global f
         global globaltag
         for f in filtered:
-            print(f)
             duration = f['duration']
             jpg = iter(glob.glob(f'{os.path.dirname(f["path"])}/*.jpg') or [])
 
             src = next(jpg, None)
-            print(src)
             if not src:
                 response = requests.get(get_img_url(f['artist'], f['album']))
-                open(f"{os.path.dirname(f['path'])}/albumimg.jpg", "wb").write(response.content)
-                src = 'icon.png'
+                with open(f"{os.path.dirname(f['path'])}/albumimg.jpg", "wb") as pic:
+                    if not response:
+                        pic.write(open('icon.png', 'rb'))
+                    else:
+                        pic.write(response.content)
             else:
                 dst = os.path.join(os.curdir, 'albumimg.jpg')
                 shutil.copyfile(src, dst)
@@ -102,48 +104,50 @@ class RadioHandler(socketserver.StreamRequestHandler):
                             Genre: {}<br>
                             Release Year: {}'''.format(f['artist'], f['album'], f['title'],
                                                        f['genre'], f['year']))
+
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
 
-            with open(f['path'], 'rb') as music_file:
-                seconds = 0
-                tstart = time.time()
-                for i, (head, fram) in enumerate(mp3.frames(music_file)):
-                    self.wfile.write(fram)
+            try:
+                print(f['path'])
+                with open(f['path'], 'rb') as music_file:
+                    seconds = 0
+                    tstart = time.time()
+                    for i, (head, fram) in enumerate(mp3.frames(music_file)):
+                        self.wfile.write(fram)
 
-                    # print(head)
-                    seconds += mp3.time(head)
-                    t = mp3.time(head) * 0.5
-                    time.sleep(t)
-                position = 0
-            tend = time.time()
-            time.sleep(seconds - (tend - tstart))
+                        # print(head)
+                        seconds += mp3.time(head)
+                        t = mp3.time(head) * 0.5
+                        time.sleep(t)
+                tend = time.time()
+                time.sleep(seconds - (tend - tstart))
+            except ConnectionAbortedError:
+                print("Коннект аборт")
+            except mp3.MP3Error:
+                print('bad frame-header', f['path'])
+                tend = time.time()
+                time.sleep(seconds - (tend - tstart))
 
 
     def handle(self):
         global f
-        global f2
         global globaltag
-        global globaltag2
-        global listloaded2
+        global stream10list
         global position
         global duration
 
         content = f'''
-        
+        <!doctype html>
+        <html>
         <head>   
+        <link href="main.css" rel="stylesheet" type="text/css">
         <meta charset=utf-8>
         <meta http-equiv="refresh" content="{duration}" >
-         <script type="text/javascript">
-          </script>
+        
         </head>
         <body ><h1>Рашн музик</h1>
-        <img src="/albumimg.jpg" alt="Обложка" width=300>
-        <audio controls="controls" preload=none >
-          
-          <source src="111" type="audio/mpeg" />
-         
-        Your browser does not support the audio element.
-        </audio>
+        <img src="/albumimg.jpg" alt="Обложка" width=200>
+
         <a href='/111'>Link to 111</a>
         <br>
 
@@ -151,24 +155,23 @@ class RadioHandler(socketserver.StreamRequestHandler):
                     
         <audio controls="controls" preload=none >
           
-          <source src="222" type="audio/mpeg" />
+          <source src="stream" type="audio/mpeg" />
          
         Your browser does not support the audio element.
         </audio>
-        <a href='/222'>Link to 222</a>
+        <a href='/stream'>Stream</a>
         <br>
-        
-        <br>
-
-            <p id=title>{globaltag2}</p>
-                 
+                 {stream10list}
             </body>
+        </html>
         '''.encode('utf-8')
 
 
         station = self.rfile.readline().split(b' ')[1]
-        print('Connection from {}'.format(self.client_address[0]))
-        print('They want to play {}'.format(station))
+        if self.client_address[0] != '127.0.0.1':
+            print('Connection from {}'.format(self.client_address[0]))
+        if station not in (b'/favicon.ico', b'/albumimg.jpg'):
+            print('They want to play {}'.format(station))
 
         conn = sqlite3.connect('mp3base.db')
         conn.row_factory = sqlite3.Row
@@ -177,7 +180,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         if b'/111' in station:
             if b'genre=' in station:
                 genre = station.decode().split('genre=')[1]
-                select = f"SELECT * FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();"
+                select = f"SELECT artist,album,title,genre,year,duration, path FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();"
                 cur.execute(select)
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
@@ -185,46 +188,31 @@ class RadioHandler(socketserver.StreamRequestHandler):
             elif b'?' in station:
                 query = station.split(b'?')[1].decode().replace('%20', ' ')
                 query = urllib.parse.unquote(query)
-                select = f"SELECT * FROM muzlo WHERE artist like '%{query}%' ORDER BY RANDOM();"
+                select = f"SELECT artist,album,title,genre,year,duration, path FROM muzlo WHERE path LIKE '%{query}%' ORDER BY RANDOM();"
                 cur.execute(select)
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
 
 
             while True:
-                conn = sqlite3.connect('mp3base.db')
-                conn.row_factory = sqlite3.Row
-                cur = conn.cursor()
-                cur.execute(f"SELECT * FROM muzlo ORDER BY RANDOM() limit 100;")
+                cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
+                            f"FROM muzlo ORDER BY RANDOM() limit 100;")
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
 
 
-        elif station==b'/222':
+        elif station==b'/stream':
 
             while True:
 
 
-                print(f2)
 
                 self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
-
-                with open(f2, 'rb') as music_file:
-                    seconds = 0
-                    tstart = time.time()
-                    for i, (head, fram) in enumerate(mp3.frames(music_file)):
-                        if i < position:
-                            continue
-                        position = i
-                        self.wfile.write(fram)
-
-                        # print(head)
-                        seconds += mp3.time(head)
-                        t = mp3.time(head) * 0.5
-                        time.sleep(t)
-                    position = 0
-                    tend = time.time()
-                    time.sleep(seconds - (tend - tstart))
+                cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
+                            f"FROM muzlo ORDER BY RANDOM() limit 10;")
+                filtered = cur.fetchall()
+                stream10list = [f"{i['artist']} - {i['title']}" for i in filtered]
+                self.handle_mp3_stream(filtered)
 
 
         elif station == b'/favicon.ico':
@@ -236,20 +224,27 @@ class RadioHandler(socketserver.StreamRequestHandler):
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n')
             self.wfile.write(img_to_bytes.image_to_byte_array(next(iter(glob.glob(f'{os.path.dirname(f["path"])}/*.jpg') or []), None)))
 
+        elif station.endswith(b'.css'):
+            self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: text/css\r\n\r\n')
+            self.wfile.write(open('main.css', 'r').read().encode())
+
         else:
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n')
             self.wfile.write(content)
 
 
 
+
+
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
-                
+
 if __name__ == '__main__':
     HOST, PORT = "0.0.0.0", 1234
 
     ThreadedTCPServer.allow_reuse_address = True
     ThreadedTCPServer.timeout=5
     server = ThreadedTCPServer((HOST, PORT), RadioHandler)
+
 
     server.serve_forever()
