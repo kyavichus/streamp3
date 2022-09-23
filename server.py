@@ -26,6 +26,7 @@ import tinytag
 import img_to_bytes
 from bs4 import BeautifulSoup as bs
 import sqlite3
+import urllib.parse
 
 # music_files = list(glob.glob('music/*.mp3'))
 # f = random.choice(music_files)
@@ -183,7 +184,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
             elif b'?' in station:
                 query = station.split(b'?')[1].decode().replace('%20', ' ')
-                print('query', query)
+                query = urllib.parse(query)
                 select = f"SELECT * FROM muzlo WHERE artist like '%{query}%' ORDER BY RANDOM();"
                 cur.execute(select)
                 filtered = cur.fetchmany(100)
