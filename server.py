@@ -27,18 +27,18 @@ import img_to_bytes
 from bs4 import BeautifulSoup as bs
 import sqlite3
 
-music_files = list(glob.glob('music/*.mp3'))
-f = random.choice(music_files)
+# music_files = list(glob.glob('music/*.mp3'))
+# f = random.choice(music_files)
 position = 0
 duration = 30
 
-music_files2 = []
-for root, dirs, files in os.walk("music2"):
-    for file in files:
-        if file.endswith(".mp3"):
-            music_files2.append(os.path.join(root, file))
-f2 = random.choice(music_files2)
-listloaded2 = [f2, ]
+# music_files2 = []
+# for root, dirs, files in os.walk("music2"):
+#     for file in files:
+#         if file.endswith(".mp3"):
+#             music_files2.append(os.path.join(root, file))
+# f2 = random.choice(music_files2)
+# listloaded2 = [f2, ]
 
 
 def get_img_url(artist, album) -> str:
@@ -71,8 +71,8 @@ def getTinyTags(path):
     # "Track Length: %s" % trackInfo.())
 
 
-globaltag = getTinyTags(f)
-globaltag2 = getTinyTags(f2)
+globaltag = ''
+globaltag2 = ''
 albumjpg = b''
 
 
@@ -156,7 +156,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         </audio>
         <a href='/222'>Link to 222</a>
         <br>
-        {listloaded2}
+        
         <br>
 
             <p id=title>{globaltag2}</p>
@@ -169,34 +169,31 @@ class RadioHandler(socketserver.StreamRequestHandler):
         print('Connection from {}'.format(self.client_address[0]))
         print('They want to play {}'.format(station))
 
-
-
+        conn = sqlite3.connect('mp3base.db')
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
 
         if b'/111' in station:
             if b'genre=' in station:
                 genre = station.decode().split('genre=')[1]
-                filtered = []
-                # for path in music_files2:
-                #     if genreTags(path, genre):
-                #         filtered.append(path)
-                conn = sqlite3.connect('mp3base.db')
-                conn.row_factory = sqlite3.Row
-                cur = conn.cursor()
-                cur.execute(f"SELECT * FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();")
-                filtered = cur.fetchmany(1)
-                # random.shuffle(filtered)
+                select = f"SELECT * FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();"
+                cur.execute(select)
+                filtered = cur.fetchmany(2)
                 self.handle_mp3_stream(filtered)
 
             elif b'?' in station:
                 query = station.split(b'?')[1].decode().replace('%20', ' ')
-                music_f = list(filter(lambda k: query in k, music_files2))
-                self.handle_mp3_stream(music_f)
+                select = f"SELECT * FROM muzlo WHERE artist like '%{query}%' ORDER BY RANDOM();"
+                cur.execute(select)
+                filtered = cur.fetchmany(2)
+                self.handle_mp3_stream(filtered)
+
 
             while True:
                 conn = sqlite3.connect('mp3base.db')
                 conn.row_factory = sqlite3.Row
                 cur = conn.cursor()
-                cur.execute(f"SELECT * FROM muzlo ORDER BY RANDOM();")
+                cur.execute(f"SELECT * FROM muzlo ORDER BY RANDOM() limit 100;")
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
 
@@ -227,14 +224,6 @@ class RadioHandler(socketserver.StreamRequestHandler):
                     tend = time.time()
                     time.sleep(seconds - (tend - tstart))
 
-
-                f2 = random.choice(music_files2)
-                globaltag2 = getTinyTags(f2)
-                listloaded2.append(f2)
-                if len(listloaded2)>3:
-                    listloaded2.pop(0)
-                # self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n')
-                # self.wfile.write(content)
 
         elif station == b'/favicon.ico':
 
