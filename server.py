@@ -32,6 +32,7 @@ import urllib.parse
 # f = random.choice(music_files)
 position = 0
 duration = 30
+albumimg = ''
 
 # music_files2 = []
 # for root, dirs, files in os.walk("music2"):
@@ -49,13 +50,10 @@ def get_img_url(artist, album) -> str:
     resp = requests.get(url).text
 
     soup = bs(resp, 'html.parser')
-
-    return soup.find('a', class_ = 'cover-art').find('img').get('src')
-
-def genreTags(path, genre):
-
-    tag = tinytag.TinyTag.get(path)
-    return genre.lower() in tag.genre.lower()
+    try:
+        return soup.find('a', class_ = 'cover-art').find('img').get('src')
+    except AttributeError:
+        print('[x] Обложка не найдена')
 
 
 def getTinyTags(path):
@@ -75,14 +73,13 @@ def getTinyTags(path):
 
 globaltag = ''
 stream10list = ''
-albumjpg = b''
-
 
 class RadioHandler(socketserver.StreamRequestHandler):
     def handle_mp3_stream(self, filtered):
         global duration
         global f
         global globaltag
+        global albumimg
         for f in filtered:
             duration = f['duration']
             jpg = iter(glob.glob(f'{os.path.dirname(f["path"])}/*.jpg') or [])
@@ -95,9 +92,11 @@ class RadioHandler(socketserver.StreamRequestHandler):
                         pic.write(open('icon.png', 'rb'))
                     else:
                         pic.write(response.content)
+                    albumimg = f"{os.path.dirname(f['path'])}/albumimg.jpg"
             else:
-                dst = os.path.join(os.curdir, 'albumimg.jpg')
-                shutil.copyfile(src, dst)
+                # dst = os.path.join(os.curdir, 'albumimg.jpg')
+                # shutil.copyfile(src, dst)
+                albumimg = src
             globaltag = ('''Artist: {}<br>
                             Album: {}<br>
                             Track: {}<br>
@@ -135,6 +134,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         global stream10list
         global position
         global duration
+        global albumimg
 
         content = f'''
         <!doctype html>
@@ -222,7 +222,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
         elif station == b'/albumimg.jpg':
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n')
-            self.wfile.write(img_to_bytes.image_to_byte_array(next(iter(glob.glob(f'{os.path.dirname(f["path"])}/*.jpg') or []), None)))
+            self.wfile.write(img_to_bytes.image_to_byte_array(albumimg))
 
         elif station.endswith(b'.css'):
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: text/css\r\n\r\n')
