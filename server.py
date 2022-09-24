@@ -86,22 +86,26 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
             src = next(jpg, None)
             if not src:
-                response = requests.get(get_img_url(f['artist'], f['album']))
-                with open(f"{os.path.dirname(f['path'])}/albumimg.jpg", "wb") as pic:
-                    if not response:
-                        pic.write(open('icon.png', 'rb'))
-                    else:
-                        pic.write(response.content)
-                    albumimg = f"{os.path.dirname(f['path'])}/albumimg.jpg"
+                try:
+                    response = requests.get(get_img_url(f['artist'], f['album']))
+                    with open(f"{os.path.dirname(f['path'])}/albumimg.jpg", "wb") as pic:
+                        if not response:
+                            pic.write(open('icon.png', 'rb'))
+                        else:
+                            pic.write(response.content)
+                        albumimg = f"{os.path.dirname(f['path'])}/albumimg.jpg"
+                except:
+                    albumimg = f"{os.path.dirname()}/albumimg.jpg"
             else:
                 # dst = os.path.join(os.curdir, 'albumimg.jpg')
                 # shutil.copyfile(src, dst)
                 albumimg = src
-            globaltag = ('''Artist: {}<br>
-                            Album: {}<br>
-                            Track: {}<br>
-                            Genre: {}<br>
-                            Release Year: {}'''.format(f['artist'], f['album'], f['title'],
+            globaltag = ('''
+                            <li>Artist: {}</li>
+                            <li>Album: {}</li>
+                            <li>Track: {}</li>
+                            <li>Genre: {}</li>
+                            <li>Release Year: {}</li>'''.format(f['artist'], f['album'], f['title'],
                                                        f['genre'], f['year']))
 
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
@@ -125,7 +129,10 @@ class RadioHandler(socketserver.StreamRequestHandler):
             except mp3.MP3Error:
                 print('bad frame-header', f['path'])
                 tend = time.time()
-                time.sleep(seconds - (tend - tstart))
+                try:
+                    time.sleep(seconds - (tend - tstart))
+                except:
+                    pass
 
 
     def handle(self):
@@ -141,28 +148,91 @@ class RadioHandler(socketserver.StreamRequestHandler):
         <html>
         <head>   
         <link href="main.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Oswald:400,300" type="text/css">
         <meta charset=utf-8>
         <meta http-equiv="refresh" content="{duration}" >
         
         </head>
-        <body ><h1>Рашн музик</h1>
-        <img src="/albumimg.jpg" alt="Обложка" width=200>
+        <div id="wrapper">
+        <header>
+	        <a href="/"><img src="" alt=""></a>
+	        <form name="search" action="#" method="get">
+                <input type="text" name="q" placeholder="Search"><button type="submit">GO</button>
+            </form>
+        </header>
+        <nav>
+        	<ul class="top-menu">
+                <li class="active">HOME</li>
+                <li> <a href="/stream">ABOUT US</a></li>
+	        </ul>
+        </nav>
+		<div id="heading"><h1>STREAMING MP3</h1></div>
+		<aside>
+            <nav>
+                <ul class="aside-menu">
+                    {globaltag}
+                </ul>
+            </nav>
+            <h2>Now Playing</h2>
+            <p><img src="/albumimg.jpg" alt="Обложка" width="230"></p>
+        </aside>
+        <section >
+        <figure>
+            <img src="/albumimg.jpg" width="320" alt="Обложка">
+        </figure>
+        <figure>
+                <img src="" width="320" alt="Обложка">
+        </figure>
+        
+    
+        <blockquote>
+            <p>
+                {stream10list}
+            </p>
+            <cite><a href='/stream'>Stream</a></cite>
+        </blockquote>
+            </section>
 
-        <a href='/111'>Link to 111</a>
-        <br>
 
-            <p id=title>{globaltag}</p>
-                    
-        <audio controls="controls" preload=none >
-          
-          <source src="stream" type="audio/mpeg" />
-         
-        Your browser does not support the audio element.
-        </audio>
-        <a href='/stream'>Stream</a>
-        <br>
-                 {stream10list}
-            </body>
+                </div>
+        <footer>
+        <div id="footer">
+            <div id="twitter">
+                <div id="contacts">
+                    <h3>Контакты</h3>
+                    <time datetime=""2012-10-23""><a href="#">"@2022"</a></time>
+                    <p>
+                        https://github.com/kyavichus
+                        kyavichus@netsysadm.cf
+                    </p>
+                </div>
+            </div> 
+            <div id="sitemap">
+            	<h3>SITEMAP</h3>
+                <div>
+                    <a href="/">Home</a>
+                </div>
+                <div>
+                    <a href="/stream/">Stream</a>
+                </div>
+            </div>
+            <div id="social">
+            	<h3>SOCIAL NETWORKS</h3>
+                <a href="http://twitter.com/" class="social-icon twitter"></a>
+                <a href="http://facebook.com/" class="social-icon facebook"></a>
+                <a href="http://plus.google.com/" class="social-icon google-plus"></a>
+                <a href="http://vimeo.com/" class="social-icon-small vimeo"></a>
+                <a href="http://youtube.com/" class="social-icon-small youtube"></a>
+                <a href="http://flickr.com/" class="social-icon-small flickr"></a>
+                <a href="http://instagram.com/" class="social-icon-small instagram"></a>
+                <a href="/rss/" class="social-icon-small rss"></a>
+            </div>
+            <div id="footer-logo">
+            <a href="/"><img src="" alt="Stream logo"></a>
+	        <p>Copyright © 2022 netsysadm. <a href="https://github.com/kyavichus">Github</a></p>
+            </div>
+	    </div>
+        </footer>
         </html>
         '''.encode('utf-8')
 
@@ -170,7 +240,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         station = self.rfile.readline().split(b' ')[1]
         if self.client_address[0] != '127.0.0.1':
             print('Connection from {}'.format(self.client_address[0]))
-        if station not in (b'/favicon.ico', b'/albumimg.jpg'):
+        if station not in (b'/favicon.ico', b'/albumimg.jpg', b'/main.css'):
             print('They want to play {}'.format(station))
 
         conn = sqlite3.connect('mp3base.db')
@@ -180,7 +250,8 @@ class RadioHandler(socketserver.StreamRequestHandler):
         if b'/111' in station:
             if b'genre=' in station:
                 genre = station.decode().split('genre=')[1]
-                select = f"SELECT artist,album,title,genre,year,duration, path FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();"
+                select = f"SELECT artist,album,title,genre,year,duration, path " \
+                         f"FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();"
                 cur.execute(select)
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
@@ -188,7 +259,9 @@ class RadioHandler(socketserver.StreamRequestHandler):
             elif b'?' in station:
                 query = station.split(b'?')[1].decode().replace('%20', ' ')
                 query = urllib.parse.unquote(query)
-                select = f"SELECT artist,album,title,genre,year,duration, path FROM muzlo WHERE path LIKE '%{query}%' ORDER BY RANDOM();"
+                print(query)
+                select = f"SELECT artist,album,title,genre,year,duration, path " \
+                         f"FROM muzlo WHERE path LIKE '%{query}%' ORDER BY RANDOM();"
                 cur.execute(select)
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
