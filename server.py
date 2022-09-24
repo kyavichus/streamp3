@@ -33,8 +33,6 @@ import urllib.parse
 position = 0
 duration = 30
 albumimg = f'{os.path.curdir}/albumimg.jpg'
-mainfile = os.path.dirname(os.path.realpath(__file__))
-print(mainfile)
 
 # music_files2 = []
 # for root, dirs, files in os.walk("music2"):
@@ -46,7 +44,7 @@ print(mainfile)
 
 
 def get_img_url(artist, album) -> str:
-    url = f'https://www.last.fm/ru/music/{artist.replace(" ", "+")}/{album.replace(" ", "+")}'
+    url = f'https://www.last.fm/ru/music/{artist.replace(" ", "+")}/{album.replace(" ", "+")}'.rstrip('+')
     print(url)
 
     resp = requests.get(url).text
@@ -165,7 +163,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         <nav>
         	<ul class="top-menu">
                 <li class="active">HOME</li>
-                <li> <a href="/stream">ABOUT US</a></li>
+                <li> <a href="/stream">STREAM</a></li>
 	        </ul>
         </nav>
 		<div id="heading"><h1>STREAMING MP3</h1></div>
@@ -204,7 +202,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
                     <h3>Контакты</h3>
                     <time datetime=""2012-10-23""><a href="#">@2022</a></time>
                     <p>
-                        https://github.com/kyavichus
+                        https://github.com/kyavichus</br>
                         kyavichus@netsysadm.cf
                     </p>
                 </div>
@@ -251,7 +249,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
         if b'/111' in station:
             if b'genre=' in station:
-                genre = station.decode().split('genre=')[1]
+                genre = station.decode().split('genre=')[1].replace('%20', ' ')
                 select = f"SELECT artist,album,title,genre,year,duration, path " \
                          f"FROM muzlo WHERE genre like '%{genre}%' ORDER BY RANDOM();"
                 cur.execute(select)
@@ -286,7 +284,8 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
                             f"FROM muzlo ORDER BY RANDOM() limit 10;")
                 filtered = cur.fetchall()
-                stream10list = [f"{i['artist']} - {i['title']}" for i in filtered]
+                for i in [f"{i['artist']} - {i['title']}" for i in filtered]:
+                    stream10list += i + '</br>'
                 self.handle_mp3_stream(filtered)
 
 
