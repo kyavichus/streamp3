@@ -32,7 +32,9 @@ import urllib.parse
 # f = random.choice(music_files)
 position = 0
 duration = 30
-albumimg = ''
+albumimg = f'{os.path.curdir}/albumimg.jpg'
+mainfile = os.path.dirname(os.path.realpath(__file__))
+print(mainfile)
 
 # music_files2 = []
 # for root, dirs, files in os.walk("music2"):
@@ -95,7 +97,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
                             pic.write(response.content)
                         albumimg = f"{os.path.dirname(f['path'])}/albumimg.jpg"
                 except:
-                    albumimg = f"{os.path.dirname()}/albumimg.jpg"
+                    albumimg = f"{os.path.curdir}/albumimg.jpg"
             else:
                 # dst = os.path.join(os.curdir, 'albumimg.jpg')
                 # shutil.copyfile(src, dst)
@@ -200,7 +202,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
             <div id="twitter">
                 <div id="contacts">
                     <h3>Контакты</h3>
-                    <time datetime=""2012-10-23""><a href="#">"@2022"</a></time>
+                    <time datetime=""2012-10-23""><a href="#">@2022</a></time>
                     <p>
                         https://github.com/kyavichus
                         kyavichus@netsysadm.cf
@@ -296,6 +298,12 @@ class RadioHandler(socketserver.StreamRequestHandler):
         elif station == b'/albumimg.jpg':
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n')
             self.wfile.write(img_to_bytes.image_to_byte_array(albumimg))
+
+        elif station.endswith(b'.png') or station.endswith(b'.jpg') or station.endswith(b'.png'):
+            self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n')
+            self.wfile.write(img_to_bytes.image_to_byte_array(os.path.realpath(os.curdir+station.decode())))
+
+
 
         elif station.endswith(b'.css'):
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: text/css\r\n\r\n')
