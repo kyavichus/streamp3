@@ -81,6 +81,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         global globaltag
         global albumimg
         for f in filtered:
+            print(f['path'])
             duration = f['duration']
             jpg = iter(glob.glob(f'{os.path.dirname(f["path"])}/*.jpg') or [])
 
@@ -111,7 +112,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
 
             try:
-                print(f['path'])
+
                 with open(f['path'], 'rb') as music_file:
                     seconds = 0
                     tstart = time.time()
