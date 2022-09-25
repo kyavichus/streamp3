@@ -284,6 +284,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
                             f"FROM muzlo ORDER BY RANDOM() limit 10;")
                 filtered = cur.fetchall()
+                stream10list = ''
                 for i in [f"{i['artist']} - {i['title']}" for i in filtered]:
                     stream10list += i + '</br>'
                 self.handle_mp3_stream(filtered)
