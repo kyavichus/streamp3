@@ -241,8 +241,8 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
 
         station = self.rfile.readline().split(b' ')[1]
-        if self.client_address[0] != '127.0.0.1':
-            print('Connection from {}'.format(self.client_address[0]))
+        # if self.client_address[0] != '127.0.0.1':
+        print('Connection from {}'.format(self.client_address[0]))
         if station not in (b'/favicon.ico', b'/albumimg.jpg', b'/main.css'):
             print('They want to play {}'.format(station))
 
