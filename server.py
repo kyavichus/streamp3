@@ -44,7 +44,7 @@ albumimg = f'{os.path.curdir}/albumimg.jpg'
 
 
 def get_img_url(artist, album) -> str:
-    url = f'https://www.last.fm/ru/music/{artist.replace(" ", "+")}/{album.replace(" ", "+")}'.rstrip('+')
+    url = f'https://www.last.fm/ru/music/{artist.replace(" ", "+").rstrip("+#")}/{album.replace(" ", "+")}'.rstrip('+')
     print(url)
 
     resp = requests.get(url).text
