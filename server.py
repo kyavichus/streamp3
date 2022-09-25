@@ -126,6 +126,8 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 time.sleep(seconds - (tend - tstart))
             except ConnectionAbortedError:
                 print("Коннект аборт")
+                f['duration']=0
+                f['path']=''
             except mp3.MP3Error:
                 print('bad frame-header', f['path'])
                 tend = time.time()
