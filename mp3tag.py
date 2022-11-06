@@ -7,7 +7,7 @@ import sqlite3
 from tinytag import TinyTag
 
 music_files2 = []
-for root, dirs, files in os.walk("/media/mp3/rawkbox2022"):
+for root, dirs, files in os.walk("H:\Музло\Август"):
     for file in files:
         if file.endswith(".mp3"):
             music_files2.append(os.path.join(root, file))
@@ -27,9 +27,11 @@ cur.execute("""CREATE TABLE IF NOT EXISTS muzlo(
 """)
 
 conn.commit()
-
-cur.execute("SELECT id FROM muzlo ORDER BY id DESC limit 1")
-start_i = cur.fetchone()[0]
+try:
+    cur.execute("SELECT id FROM muzlo ORDER BY id DESC limit 1")
+    start_i = cur.fetchone()[0]
+except TypeError:
+    start_i = 0
 
 for i, song in enumerate(music_files2, start_i+1):
     tags = TinyTag.get(song, encoding='cp1251')
