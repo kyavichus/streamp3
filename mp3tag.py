@@ -1,7 +1,3 @@
-# from mutagen.easyid3 import EasyID3
-#
-# audio = EasyID3("music/Korol_i_SHut_-_Ta_chto_smotrit_iz_pruda_48646404.mp3")
-# print(audio.keys)
 import os
 import sqlite3
 from tinytag import TinyTag
