@@ -34,6 +34,7 @@ position = 0
 duration = 30
 albumimg = f'{os.path.curdir}/albumimg.jpg'
 
+
 # music_files2 = []
 # for root, dirs, files in os.walk("music2"):
 #     for file in files:
@@ -50,21 +51,19 @@ def get_img_url(artist, album) -> str:
 
     soup = bs(resp, 'html.parser')
     try:
-        return soup.find('a', class_ = 'cover-art').find('img').get('src')
+        return soup.find('a', class_='cover-art').find('img').get('src')
     except AttributeError:
         print('[x] Обложка не найдена')
 
 
 def getTinyTags(path):
-
     tag = tinytag.TinyTag.get(path)
-
 
     return ('''Artist: {}<br>
     Album: {}<br>
     Track: {}<br>
     Genre: {}<br>
-    Release Year: {}'''.format(tag.artist,tag.album,tag.title,tag.genre,tag.year))
+    Release Year: {}'''.format(tag.artist, tag.album, tag.title, tag.genre, tag.year))
 
     # print(
     # "Track Length: %s" % trackInfo.())
@@ -72,6 +71,7 @@ def getTinyTags(path):
 
 globaltag = ''
 stream10list = ''
+
 
 class RadioHandler(socketserver.StreamRequestHandler):
     def handle_mp3_stream(self, filtered):
@@ -106,7 +106,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
                             <li>Track: {}</li>
                             <li>Genre: {}</li>
                             <li>Release Year: {}</li>'''.format(f['artist'], f['album'], f['title'],
-                                                       f['genre'], f['year']))
+                                                                f['genre'], f['year']))
 
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
 
@@ -126,8 +126,8 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 time.sleep(seconds - (tend - tstart))
             except ConnectionAbortedError:
                 print("Коннект аборт")
-                f['duration']=0
-                f['path']=''
+                f['duration'] = 0
+                f['path'] = ''
             except mp3.MP3Error:
                 print('bad frame-header', f['path'])
                 tend = time.time()
@@ -135,7 +135,6 @@ class RadioHandler(socketserver.StreamRequestHandler):
                     time.sleep(seconds - (tend - tstart))
                 except:
                     pass
-
 
     def handle(self):
         global f
@@ -153,7 +152,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Oswald:400,300" type="text/css">
         <meta charset=utf-8>
         <meta http-equiv="refresh" content="{duration}" >
-        
+
         </head>
         <div id="wrapper">
         <header>
@@ -185,8 +184,8 @@ class RadioHandler(socketserver.StreamRequestHandler):
         <figure>
                 <img src="" width="320" alt="Обложка">
         </figure>
-        
-    
+
+
         <blockquote>
             <p>
                 {stream10list}
@@ -238,7 +237,6 @@ class RadioHandler(socketserver.StreamRequestHandler):
         </html>
         '''.encode('utf-8')
 
-
         station = self.rfile.readline().split(b' ')[1]
         # if self.client_address[0] != '127.0.0.1':
         print('Connection from {}'.format(self.client_address[0]))
@@ -268,7 +266,6 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
 
-
             while True:
                 cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
                             f"FROM muzlo ORDER BY RANDOM() limit 100;")
@@ -276,11 +273,9 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 self.handle_mp3_stream(filtered)
 
 
-        elif station==b'/stream':
+        elif station == b'/stream':
 
             while True:
-
-
 
                 self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
                 cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
@@ -303,7 +298,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
         elif station.endswith(b'.png') or station.endswith(b'.jpg') or station.endswith(b'.png'):
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n')
-            self.wfile.write(img_to_bytes.image_to_byte_array(os.path.realpath(os.curdir+station.decode())))
+            self.wfile.write(img_to_bytes.image_to_byte_array(os.path.realpath(os.curdir + station.decode())))
 
 
 
@@ -316,18 +311,15 @@ class RadioHandler(socketserver.StreamRequestHandler):
             self.wfile.write(content)
 
 
-
-
-
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
+
 
 if __name__ == '__main__':
     HOST, PORT = "0.0.0.0", 12345
 
     ThreadedTCPServer.allow_reuse_address = True
-    ThreadedTCPServer.timeout=5
+    ThreadedTCPServer.timeout = 5
     server = ThreadedTCPServer((HOST, PORT), RadioHandler)
-
 
     server.serve_forever()
