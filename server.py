@@ -21,9 +21,6 @@ import socketserver
 import time
 import glob
 import random
-
-from jinja2 import Environment, FileSystemLoader
-
 import mp3
 import tinytag
 import img_to_bytes
@@ -37,6 +34,7 @@ position = 0
 duration = 30
 albumimg = f'{os.path.curdir}/albumimg.jpg'
 
+
 # music_files2 = []
 # for root, dirs, files in os.walk("music2"):
 #     for file in files:
@@ -44,7 +42,6 @@ albumimg = f'{os.path.curdir}/albumimg.jpg'
 #             music_files2.append(os.path.join(root, file))
 # f2 = random.choice(music_files2)
 # listloaded2 = [f2, ]
-
 
 def get_img_url(artist, album) -> str:
     url = f'https://www.last.fm/ru/music/{artist.replace(" ", "+").rstrip("+#")}/{album.replace(" ", "+")}'.rstrip('+')
@@ -54,25 +51,27 @@ def get_img_url(artist, album) -> str:
 
     soup = bs(resp, 'html.parser')
     try:
-        return soup.find('a', class_ = 'cover-art').find('img').get('src')
+        return soup.find('a', class_='cover-art').find('img').get('src')
     except AttributeError:
         print('[x] Обложка не найдена')
 
 
 def getTinyTags(path):
-
     tag = tinytag.TinyTag.get(path)
-
 
     return ('''Artist: {}<br>
     Album: {}<br>
     Track: {}<br>
     Genre: {}<br>
-    Release Year: {}'''.format(tag.artist,tag.album,tag.title,tag.genre,tag.year))
+    Release Year: {}'''.format(tag.artist, tag.album, tag.title, tag.genre, tag.year))
+
+    # print(
+    # "Track Length: %s" % trackInfo.())
 
 
 globaltag = ''
 stream10list = ''
+
 
 class RadioHandler(socketserver.StreamRequestHandler):
     def handle_mp3_stream(self, filtered):
@@ -107,7 +106,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
                             <li>Track: {}</li>
                             <li>Genre: {}</li>
                             <li>Release Year: {}</li>'''.format(f['artist'], f['album'], f['title'],
-                                                       f['genre'], f['year']))
+                                                                f['genre'], f['year']))
 
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
 
@@ -127,8 +126,8 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 time.sleep(seconds - (tend - tstart))
             except ConnectionAbortedError:
                 print("Коннект аборт")
-                # f['duration']=0
-                # f['path']=''
+                f['duration'] = 0
+                f['path'] = ''
             except mp3.MP3Error:
                 print('bad frame-header', f['path'])
                 tend = time.time()
@@ -136,7 +135,6 @@ class RadioHandler(socketserver.StreamRequestHandler):
                     time.sleep(seconds - (tend - tstart))
                 except:
                     pass
-
 
     def handle(self):
         global f
@@ -146,103 +144,98 @@ class RadioHandler(socketserver.StreamRequestHandler):
         global duration
         global albumimg
 
-        # content = f'''
-        # <!doctype html>
-        # <html>
-        # <head>
-        # <link href="main.css" rel="stylesheet" type="text/css">
-        # <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Oswald:400,300" type="text/css">
-        # <meta charset=utf-8>
-        # <meta http-equiv="refresh" content="{duration}" >
-        #
-        # </head>
-        # <div id="wrapper">
-        # <header>
-	    #     <a href="/"><img src="" alt=""></a>
-	    #     <form name="search" action="#" method="get">
-        #         <input type="text" name="q" placeholder="Search"><button type="submit">GO</button>
-        #     </form>
-        # </header>
-        # <nav>
-        # 	<ul class="top-menu">
-        #         <li class="active">HOME</li>
-        #         <li> <a href="/stream">STREAM</a></li>
-	    #     </ul>
-        # </nav>
-		# <div id="heading"><h1>STREAMING MP3</h1></div>
-		# <aside>
-        #     <nav>
-        #         <ul class="aside-menu">
-        #             {globaltag}
-        #         </ul>
-        #     </nav>
-        #     <h2>Now Playing</h2>
-        #     <p><img src="/albumimg.jpg" alt="Обложка" width="230"></p>
-        # </aside>
-        # <section >
-        # <figure>
-        #     <img src="/albumimg.jpg" width="320" alt="Обложка">
-        # </figure>
-        # <figure>
-        #         <img src="" width="320" alt="Обложка">
-        # </figure>
-        #
-        #
-        # <blockquote>
-        #     <p>
-        #         {stream10list}
-        #     </p>
-        #     <cite><a href='/stream'>Stream</a></cite>
-        # </blockquote>
-        #     </section>
-        #
-        #
-        #         </div>
-        # <footer>
-        # <div id="footer">
-        #     <div id="twitter">
-        #         <div id="contacts">
-        #             <h3>Контакты</h3>
-        #             <time datetime=""2012-10-23""><a href="#">@2022</a></time>
-        #             <p>
-        #                 https://github.com/kyavichus</br>
-        #                 kyavichus@netsysadm.cf
-        #             </p>
-        #         </div>
-        #     </div>
-        #     <div id="sitemap">
-        #     	<h3>SITEMAP</h3>
-        #         <div>
-        #             <a href="/">Home</a>
-        #         </div>
-        #         <div>
-        #             <a href="/stream/">Stream</a>
-        #         </div>
-        #     </div>
-        #     <div id="social">
-        #     	<h3>SOCIAL NETWORKS</h3>
-        #         <a href="http://twitter.com/" class="social-icon twitter"></a>
-        #         <a href="http://facebook.com/" class="social-icon facebook"></a>
-        #         <a href="http://plus.google.com/" class="social-icon google-plus"></a>
-        #         <a href="http://vimeo.com/" class="social-icon-small vimeo"></a>
-        #         <a href="http://youtube.com/" class="social-icon-small youtube"></a>
-        #         <a href="http://flickr.com/" class="social-icon-small flickr"></a>
-        #         <a href="http://instagram.com/" class="social-icon-small instagram"></a>
-        #         <a href="/rss/" class="social-icon-small rss"></a>
-        #     </div>
-        #     <div id="footer-logo">
-        #     <a href="/"><img src="" alt="Stream logo"></a>
-	    #     <p>Copyright © 2022 netsysadm. <a href="https://github.com/kyavichus">Github</a></p>
-        #     </div>
-	    # </div>
-        # </footer>
-        # </html>
-        # '''.encode('utf-8')
-        env = Environment(loader=FileSystemLoader("."))
-        templ = env.get_template("main.html")
-        dict_content = {'globaltag': globaltag, 'stream10list': stream10list}
-        content = templ.render(dict_content).encode('utf-8')
+        content = f'''
+        <!doctype html>
+        <html>
+        <head>   
+        <link href="main.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Oswald:400,300" type="text/css">
+        <meta charset=utf-8>
+        <meta http-equiv="refresh" content="{duration}" >
 
+        </head>
+        <div id="wrapper">
+        <header>
+	        <a href="/"><img src="" alt=""></a>
+	        <form name="search" action="#" method="get">
+                <input type="text" name="q" placeholder="Search"><button type="submit">GO</button>
+            </form>
+        </header>
+        <nav>
+        	<ul class="top-menu">
+                <li class="active">HOME</li>
+                <li> <a href="/stream">STREAM</a></li>
+	        </ul>
+        </nav>
+		<div id="heading"><h1>STREAMING MP3</h1></div>
+		<aside>
+            <nav>
+                <ul class="aside-menu">
+                    {globaltag}
+                </ul>
+            </nav>
+            <h2>Now Playing</h2>
+            <p><img src="/albumimg.jpg" alt="Обложка" width="230"></p>
+        </aside>
+        <section >
+        <figure>
+            <img src="/albumimg.jpg" width="320" alt="Обложка">
+        </figure>
+        <figure>
+                <img src="" width="320" alt="Обложка">
+        </figure>
+
+
+        <blockquote>
+            <p>
+                {stream10list}
+            </p>
+            <cite><a href='/stream'>Stream</a></cite>
+        </blockquote>
+            </section>
+
+
+                </div>
+        <footer>
+        <div id="footer">
+            <div id="twitter">
+                <div id="contacts">
+                    <h3>Контакты</h3>
+                    <time datetime=""2012-10-23""><a href="#">@2022</a></time>
+                    <p>
+                        https://github.com/kyavichus</br>
+                        kyavichus@netsysadm.cf
+                    </p>
+                </div>
+            </div> 
+            <div id="sitemap">
+            	<h3>SITEMAP</h3>
+                <div>
+                    <a href="/">Home</a>
+                </div>
+                <div>
+                    <a href="/stream/">Stream</a>
+                </div>
+            </div>
+            <div id="social">
+            	<h3>SOCIAL NETWORKS</h3>
+                <a href="http://twitter.com/" class="social-icon twitter"></a>
+                <a href="http://facebook.com/" class="social-icon facebook"></a>
+                <a href="http://plus.google.com/" class="social-icon google-plus"></a>
+                <a href="http://vimeo.com/" class="social-icon-small vimeo"></a>
+                <a href="http://youtube.com/" class="social-icon-small youtube"></a>
+                <a href="http://flickr.com/" class="social-icon-small flickr"></a>
+                <a href="http://instagram.com/" class="social-icon-small instagram"></a>
+                <a href="/rss/" class="social-icon-small rss"></a>
+            </div>
+            <div id="footer-logo">
+            <a href="/"><img src="" alt="Stream logo"></a>
+	        <p>Copyright © 2022 netsysadm. <a href="https://github.com/kyavichus">Github</a></p>
+            </div>
+	    </div>
+        </footer>
+        </html>
+        '''.encode('utf-8')
 
         station = self.rfile.readline().split(b' ')[1]
         # if self.client_address[0] != '127.0.0.1':
@@ -250,7 +243,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         if station not in (b'/favicon.ico', b'/albumimg.jpg', b'/main.css'):
             print('They want to play {}'.format(station))
 
-        conn = sqlite3.connect('mp3base.db')
+        conn = sqlite3.connect('2mp3base.db')
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -273,7 +266,6 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 filtered = cur.fetchmany(100)
                 self.handle_mp3_stream(filtered)
 
-
             while True:
                 cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
                             f"FROM muzlo ORDER BY RANDOM() limit 100;")
@@ -281,11 +273,9 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 self.handle_mp3_stream(filtered)
 
 
-        elif station==b'/stream':
+        elif station == b'/stream':
 
             while True:
-
-
 
                 self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n\r\n')
                 cur.execute(f"SELECT artist,album,title,genre,year,duration, path "
@@ -294,8 +284,6 @@ class RadioHandler(socketserver.StreamRequestHandler):
                 stream10list = ''
                 for i in [f"{i['artist']} - {i['title']}" for i in filtered]:
                     stream10list += i + '</br>'
-                time.sleep(5)
-
                 self.handle_mp3_stream(filtered)
 
 
@@ -310,7 +298,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
 
         elif station.endswith(b'.png') or station.endswith(b'.jpg') or station.endswith(b'.png'):
             self.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n')
-            self.wfile.write(img_to_bytes.image_to_byte_array(os.path.realpath(os.curdir+station.decode())))
+            self.wfile.write(img_to_bytes.image_to_byte_array(os.path.realpath(os.curdir + station.decode())))
 
 
 
@@ -323,18 +311,15 @@ class RadioHandler(socketserver.StreamRequestHandler):
             self.wfile.write(content)
 
 
-
-
-
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
+
 if __name__ == '__main__':
-    HOST, PORT = "0.0.0.0", 1234
+    HOST, PORT = "0.0.0.0", 12345
 
     ThreadedTCPServer.allow_reuse_address = True
-    ThreadedTCPServer.timeout=5
+    ThreadedTCPServer.timeout = 5
     server = ThreadedTCPServer((HOST, PORT), RadioHandler)
-
 
     server.serve_forever()
