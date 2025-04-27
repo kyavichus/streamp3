@@ -42,7 +42,6 @@ albumimg = f'{os.path.curdir}/albumimg.jpg'
 # f2 = random.choice(music_files2)
 # listloaded2 = [f2, ]
 
-
 def get_img_url(artist, album) -> str:
     url = f'https://www.last.fm/ru/music/{artist.replace(" ", "+").rstrip("+#")}/{album.replace(" ", "+")}'.rstrip('+')
     print(url)
@@ -246,7 +245,7 @@ class RadioHandler(socketserver.StreamRequestHandler):
         if station not in (b'/favicon.ico', b'/albumimg.jpg', b'/main.css'):
             print('They want to play {}'.format(station))
 
-        conn = sqlite3.connect('mp3base.db')
+        conn = sqlite3.connect('2mp3base.db')
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -324,7 +323,7 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
 if __name__ == '__main__':
-    HOST, PORT = "0.0.0.0", 1234
+    HOST, PORT = "0.0.0.0", 12345
 
     ThreadedTCPServer.allow_reuse_address = True
     ThreadedTCPServer.timeout=5
